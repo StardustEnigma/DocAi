@@ -368,6 +368,101 @@
             font-weight: 600;
         }
 
+        /* 🔥 HEATMAP SECTION STYLES */
+        .heatmap-section {
+            background: linear-gradient(135deg, var(--color-card-3) 0%, #E1BEE7 100%);
+            padding: 30px;
+            border-radius: 20px;
+            margin: 30px 0;
+            box-shadow: 0 15px 40px rgba(156, 39, 176, 0.1);
+            border: 2px solid #AB47BC;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .heatmap-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(156, 39, 176, 0.05) 0%, rgba(233, 30, 99, 0.05) 100%);
+            border-radius: 20px;
+        }
+
+        .heatmap-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .heatmap-section h3 {
+            color: #4A148C;
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(74, 20, 140, 0.1);
+        }
+
+        .heatmap-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(156, 39, 176, 0.2);
+            transition: all 0.3s ease;
+            border: 3px solid white;
+        }
+
+        .heatmap-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 50px rgba(156, 39, 176, 0.3);
+        }
+
+        .heatmap-description {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            color: #4A148C;
+            font-weight: 500;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #4A148C;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-low { background: rgba(255, 255, 0, 0.6); }
+        .legend-medium { background: rgba(255, 165, 0, 0.7); }
+        .legend-high { background: rgba(255, 0, 0, 0.7); }
+
         .probabilities { 
             background: linear-gradient(135deg, var(--color-bg-main) 0%, var(--color-bg-secondary) 100%);
             padding: 25px; 
@@ -497,6 +592,19 @@
             .result-prediction {
                 font-size: 2rem;
             }
+
+            .heatmap-section {
+                padding: 20px 15px;
+            }
+
+            .heatmap-section h3 {
+                font-size: 1.5rem;
+            }
+
+            .legend-item {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -510,6 +618,10 @@
 
             .result-prediction {
                 font-size: 1.8rem;
+            }
+
+            .heatmap-section h3 {
+                font-size: 1.3rem;
             }
         }
 
@@ -528,6 +640,22 @@
             background: linear-gradient(45deg, var(--color-success), var(--color-light)) !important;
             color: white !important;
             border-color: var(--color-success) !important;
+        }
+
+        /* Heatmap animation */
+        .heatmap-fade-in {
+            animation: heatmapFadeIn 0.8s ease-out;
+        }
+
+        @keyframes heatmapFadeIn {
+            from { 
+                opacity: 0; 
+                transform: scale(0.95) translateY(30px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: scale(1) translateY(0); 
+            }
         }
     </style>
 </head>
@@ -751,13 +879,15 @@
                     <h2>📊 Analysis Report</h2>
                     <div class="report-grid">
                         <div class="report-item">
-                            <strong>📄 File:</strong><br>{{ report.filename }}
+                           <strong>📄 File:</strong><br>
+<span style="word-break: break-all;">{{ report.filename }}</span>
+
                         </div>
                         <div class="report-item">
-                            <strong>📋 Type:</strong><br>{{ report.doc_type }}
+                           <strong>⏰ Time:</strong><br>{{ report.upload_time|default:report.timestamp|default:"Unknown" }}
                         </div>
                         <div class="report-item">
-                            <strong>⏰ Time:</strong><br>{{ report.timestamp }}
+                            <strong>⏰ Time:</strong><br>{{ report.upload_time|default:report.timestamp }}
                         </div>
                         <div class="report-item">
                             <strong>⚡ Processing:</strong><br>{{ report.processing_time }}
@@ -774,6 +904,40 @@
                         Confidence: {{ report.confidence }}
                     </div>
                 </div>
+
+                <!-- 🔥 HEATMAP SECTION - THE MAGIC HAPPENS HERE! -->
+                {% if report.heatmap_base64 %}
+                <div class="heatmap-section heatmap-fade-in">
+                    <div class="heatmap-content">
+                        <h3>🔥 AI Model Attention Heatmap</h3>
+                        <img src="{{ report.heatmap_base64 }}" alt="Document Analysis Heatmap" class="heatmap-image">
+                        
+                        <div class="heatmap-description">
+                            <strong>What is this?</strong> This heatmap shows areas where our AI model focused its attention during analysis. 
+                            {% if report.prediction == 'FORGED' %}
+                            <span style="color: #d32f2f;">Red/orange areas indicate regions that contributed to the forgery detection.</span>
+                            {% else %}
+                            <span style="color: #388e3c;">Colored areas show regions analyzed for authenticity verification.</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="heatmap-legend">
+                            <div class="legend-item">
+                                <div class="legend-color legend-low"></div>
+                                <span>Low Attention</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-medium"></div>
+                                <span>Medium Attention</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-high"></div>
+                                <span>High Attention</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 
                 <div class="download-section">
                     <a href="{% url 'download_report' report.detection_id %}" class="btn btn-success">
@@ -933,6 +1097,14 @@
                     reportSection.style.transform = 'translateY(0)';
                 }, 400);
             }
+
+            // Animate heatmap section if present
+            const heatmapSection = document.querySelector('.heatmap-section');
+            if (heatmapSection) {
+                setTimeout(() => {
+                    heatmapSection.classList.add('heatmap-fade-in');
+                }, 600);
+            }
         });
 
         // Add hover effects to probability items
@@ -947,6 +1119,54 @@
                 this.style.transform = 'translateX(0)';
             });
         });
+
+        // Heatmap image interaction
+        const heatmapImage = document.querySelector('.heatmap-image');
+        if (heatmapImage) {
+            heatmapImage.addEventListener('click', function() {
+                // Create fullscreen overlay
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.9);
+                    z-index: 9999;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    cursor: pointer;
+                `;
+                
+                const fullscreenImg = document.createElement('img');
+                fullscreenImg.src = this.src;
+                fullscreenImg.style.cssText = `
+                    max-width: 90%;
+                    max-height: 90%;
+                    border-radius: 15px;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                `;
+                
+                overlay.appendChild(fullscreenImg);
+                document.body.appendChild(overlay);
+                
+                // Close on click
+                overlay.addEventListener('click', function() {
+                    document.body.removeChild(overlay);
+                });
+                
+                // Close on escape key
+                const escapeHandler = function(e) {
+                    if (e.key === 'Escape') {
+                        document.body.removeChild(overlay);
+                        document.removeEventListener('keydown', escapeHandler);
+                    }
+                };
+                document.addEventListener('keydown', escapeHandler);
+            });
+        }
     </script>
 </body>
 </html>
